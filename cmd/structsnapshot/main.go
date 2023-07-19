@@ -1,0 +1,63 @@
+package main
+
+import (
+	"fmt"
+	"go/types"
+	"os"
+
+	"github.com/gustavosbarreto/structsnapshot"
+	"golang.org/x/tools/go/packages"
+)
+
+func TakeSnapshot(obj types.Object) (*structsnapshot.Snapshot, error) {
+	snapshot := &structsnapshot.Snapshot{
+		Name: obj.Name(),
+	}
+
+	namedType, ok := obj.Type().(*types.Named)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a defined type", obj.Type())
+	}
+
+	structType, ok := namedType.Underlying().(*types.Struct)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a struct type", obj.Type())
+	}
+
+	for i := 0; i < structType.NumFields(); i++ {
+		field := structsnapshot.FieldSnapshot{
+			Name: structType.Field(i).Name(),
+			Type: structType.Field(i).Type().String(),
+			Tag:  structType.Tag(i),
+		}
+
+		snapshot.Fields = append(snapshot.Fields, field)
+	}
+
+	return snapshot, nil
+}
+
+func main() {
+	if len(os.Args) < 1 {
+		panic("Usage: structsnapshot [struct]")
+	}
+
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedFiles |
+			packages.NeedSyntax |
+			packages.NeedTypes |
+			packages.NeedTypesInfo},
+		"")
+	if err != nil {
+		panic(err)
+	}
+
+	snapshot, err := TakeSnapshot(pkgs[0].Types.Scope().Lookup(os.Args[1]))
+	if err != nil {
+		panic(err)
+	}
+
+	if err := snapshot.SaveToFile(); err != nil {
+		panic(err)
+	}
+}
