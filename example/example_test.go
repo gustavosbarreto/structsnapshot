@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExampleStruct(t *testing.T) {
+func TestUserStruct(t *testing.T) {
 	// Take snapshot of current `User` struct
 	current, err := structsnapshot.TakeSnapshot(User{})
 	assert.NoError(t, err)
