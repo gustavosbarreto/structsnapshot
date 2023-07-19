@@ -1,0 +1,1 @@
+{"name":"User","fields":[{"name":"Username","type":"string","tag":"json:\"username\" validate:\"required\""},{"name":"Email","type":"string","tag":"json:\"email\" validate:\"required,email\""},{"name":"Timezone","type":"string","tag":"json:\"timezone\" validate:\"timezone\""}]}
