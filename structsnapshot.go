@@ -42,9 +42,9 @@ func (s *Snapshot) SaveToFile() error {
 
 // FieldSnapshot represents a field of a struct
 type FieldSnapshot struct {
-	Name string            `json:"name"`
-	Type string            `json:"type"`
-	Tag  reflect.StructTag `json:"tag"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Tag  string `json:"tag"`
 }
 
 // TakeSnapshot creates a snapshot of a struct
@@ -62,7 +62,7 @@ func TakeSnapshot(data interface{}) (*Snapshot, error) {
 		fieldSnapshot := FieldSnapshot{
 			Name: fieldType.Name,
 			Type: fieldType.Type.String(),
-			Tag:  fieldType.Tag,
+			Tag:  string(fieldType.Tag),
 		}
 
 		snapshot.Fields = append(snapshot.Fields, fieldSnapshot)
