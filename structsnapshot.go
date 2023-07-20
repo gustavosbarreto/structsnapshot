@@ -47,26 +47,36 @@ type FieldSnapshot struct {
 	Tag  string `json:"tag"`
 }
 
+func getFields(fieldType reflect.Type) []FieldSnapshot {
+	var fields []FieldSnapshot
+
+	for i := 0; i < fieldType.NumField(); i++ {
+		fieldType := fieldType.Field(i)
+
+		if fieldType.Anonymous {
+			fields = append(fields, getFields(fieldType.Type)...)
+			continue
+		}
+
+		field := FieldSnapshot{
+			Name: fieldType.Name,
+			Type: fieldType.Type.String(),
+			Tag:  string(fieldType.Tag),
+		}
+
+		fields = append(fields, field)
+	}
+
+	return fields
+}
+
 // TakeSnapshot creates a snapshot of a struct
 func TakeSnapshot(data interface{}) (*Snapshot, error) {
 	snapshot := &Snapshot{
 		Name: reflect.TypeOf(data).Name(),
 	}
 
-	value := reflect.ValueOf(data)
-	valueType := value.Type()
-
-	for i := 0; i < value.NumField(); i++ {
-		fieldType := valueType.Field(i)
-
-		fieldSnapshot := FieldSnapshot{
-			Name: fieldType.Name,
-			Type: fieldType.Type.String(),
-			Tag:  string(fieldType.Tag),
-		}
-
-		snapshot.Fields = append(snapshot.Fields, fieldSnapshot)
-	}
+	snapshot.Fields = getFields(reflect.ValueOf(data).Type())
 
 	return snapshot, nil
 }

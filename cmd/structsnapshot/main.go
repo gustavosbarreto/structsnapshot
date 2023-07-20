@@ -9,6 +9,37 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+func getFields(structType *types.Struct) []structsnapshot.FieldSnapshot {
+	var fields []structsnapshot.FieldSnapshot
+
+	for i := 0; i < structType.NumFields(); i++ {
+		if structType.Field(i).Embedded() {
+			namedType, ok := structType.Field(i).Type().(*types.Named)
+			if !ok {
+				continue
+			}
+
+			structType, ok := namedType.Underlying().(*types.Struct)
+			if !ok {
+				continue
+			}
+
+			fields = append(fields, getFields(structType)...)
+			continue
+		}
+
+		field := structsnapshot.FieldSnapshot{
+			Name: structType.Field(i).Name(),
+			Type: structType.Field(i).Type().String(),
+			Tag:  structType.Tag(i),
+		}
+
+		fields = append(fields, field)
+	}
+
+	return fields
+}
+
 func TakeSnapshot(obj types.Object) (*structsnapshot.Snapshot, error) {
 	snapshot := &structsnapshot.Snapshot{
 		Name: obj.Name(),
@@ -24,15 +55,7 @@ func TakeSnapshot(obj types.Object) (*structsnapshot.Snapshot, error) {
 		return nil, fmt.Errorf("%s is not a struct type", obj.Type())
 	}
 
-	for i := 0; i < structType.NumFields(); i++ {
-		field := structsnapshot.FieldSnapshot{
-			Name: structType.Field(i).Name(),
-			Type: structType.Field(i).Type().String(),
-			Tag:  structType.Tag(i),
-		}
-
-		snapshot.Fields = append(snapshot.Fields, field)
-	}
+	snapshot.Fields = getFields(structType)
 
 	return snapshot, nil
 }
